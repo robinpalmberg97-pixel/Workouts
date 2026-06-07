@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Workout">
+<title>Workout Tracker</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:Georgia,serif;background:#F7F7F5;min-height:100vh;max-width:480px;margin:0 auto;padding-bottom:80px}
+  
+  #header{background:#1A1A2E;padding:14px 16px 12px;position:sticky;top:0;z-index:100;border-bottom:3px solid #E86B2E}
+  .header-row{display:flex;justify-content:space-between;align-items:center}
+  .header-title{color:#E86B2E;font-weight:bold;font-size:17px;letter-spacing:2px}
+  .header-sub{color:#ffffff66;font-size:10px;margin-top:2px;letter-spacing:1px}
+  .header-right{display:flex;gap:6px;align-items:center}
+  
+  .view-toggle{display:flex;gap:3px;background:#ffffff15;border-radius:8px;padding:3px}
+  .vtbtn{background:transparent;border:none;color:#ffffff88;font-size:11px;padding:5px 9px;border-radius:6px;cursor:pointer;font-family:Georgia,serif}
+  .vtbtn.active{background:#E86B2E;color:#fff}
+  
+  .export-btn{background:#ffffff18;border:1px solid #ffffff30;color:#ffffffcc;font-size:11px;padding:7px 10px;border-radius:8px;cursor:pointer;font-family:Georgia,serif;white-space:nowrap}
+  
+  #day-tabs{display:flex;overflow-x:auto;background:#1A1A2E;padding:0 12px 10px;gap:6px;scrollbar-width:none}
+  #day-tabs::-webkit-scrollbar{display:none}
+  .day-tab{background:#ffffff12;border:none;border-radius:8px;padding:8px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:58px;flex-shrink:0;transition:background .15s}
+  .day-tab.active{background:#E86B2E}
+  .day-num{color:#fff;font-size:12px;font-weight:bold}
+  .day-label{color:#ffffff99;font-size:9px;white-space:nowrap}
+  
+  #content{padding:14px}
+
+  /* Cards */
+  .card{background:#fff;border-radius:12px;margin-bottom:12px;box-shadow:0 1px 5px #0000000d;border:1px solid #EBEBEB;overflow:hidden}
+  .card-top{display:flex;justify-content:space-between;align-items:flex-start;padding:14px 14px 8px}
+  .ex-name{font-size:15px;font-weight:bold;color:#1A1A2E}
+  .ex-sets{font-size:11px;margin-top:3px;font-weight:bold;color:#E86B2E}
+  .ex-muscles{font-weight:normal;color:#888}
+  .card-meta{display:flex;align-items:center;gap:5px;margin-left:8px;flex-shrink:0}
+  .pr-badge{color:#fff;font-size:10px;font-weight:bold;padding:2px 7px;border-radius:20px;background:#E86B2E}
+  .trend-up{color:#2ECC71;font-size:13px;font-weight:bold}
+  .trend-down{color:#E74C3C;font-size:13px;font-weight:bold}
+  .last-entry{font-size:12px;color:#888;padding:0 14px 6px}
+  
+  .input-row{display:flex;gap:8px;padding:0 14px 12px}
+  .weight-input{flex:1;border:1.5px solid #E8E8E4;border-radius:8px;padding:9px 12px;font-size:16px;font-family:Georgia,serif;outline:none;color:#1A1A2E;background:#FAFAF8}
+  .log-btn{background:#E86B2E;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:bold;cursor:pointer;font-family:Georgia,serif}
+  
+  /* History mode */
+  .hist-row{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 12px}
+  .hist-item{border-radius:8px;padding:5px 10px;border-left:3px solid #e0e0e0;background:#f5f5f5}
+  .hist-item.latest{border-left-color:#E86B2E;background:#fafafa}
+  .hist-date{font-size:10px;color:#888}
+  .hist-weight{font-size:14px;font-weight:bold;color:#1A1A2E}
+  .hist-unit{font-size:11px;font-weight:normal;color:#888}
+  .no-data{color:#bbb;font-size:12px;font-style:italic;padding:4px 14px 12px}
+
+  /* Progress chart */
+  .progress-section{padding:0 14px 12px}
+  .progress-title{font-size:11px;font-weight:bold;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  .chart-wrap{position:relative;height:80px;background:#f9f9f9;border-radius:8px;overflow:hidden}
+  canvas.prog-chart{width:100%!important;height:80px!important}
+  .no-chart{font-size:11px;color:#ccc;font-style:italic;padding:28px 0;text-align:center}
+
+  /* Expand */
+  .expand-btn{width:100%;background:none;border:none;border-top:1px solid #f0f0f0;padding:10px 14px;cursor:pointer;font-size:11px;font-weight:bold;text-align:left;color:#E86B2E;letter-spacing:.5px;font-family:Georgia,serif}
+  .expanded-content{background:#FAFAF8;padding:12px 14px 14px;border-top:1px solid #f0f0f0;display:none}
+  .expanded-content.open{display:block}
+  .cues-title{font-size:11px;font-weight:bold;color:#888;letter-spacing:1px;margin-bottom:8px;text-transform:uppercase}
+  .cues-list{list-style:none;margin-bottom:12px}
+  .cue-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#333;margin-bottom:6px;line-height:1.5}
+  .cue-dot{width:6px;height:6px;border-radius:50%;background:#E86B2E;margin-top:6px;flex-shrink:0;display:inline-block}
+  .yt-link{display:inline-block;background:#E86B2E;color:#fff;text-decoration:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:bold;letter-spacing:.5px;font-family:Georgia,serif}
+
+  /* Stretch */
+  .stretch-banner{background:#E8F8EE;border:1px solid #27AE60;border-radius:10px;padding:10px 14px;margin-bottom:14px}
+  .stretch-banner-title{font-size:12px;font-weight:bold;color:#27AE60;margin-bottom:2px}
+  .stretch-banner-sub{font-size:11px;color:#555}
+  .stretch-section-title{font-size:12px;font-weight:bold;letter-spacing:1px;margin:16px 0 8px;text-transform:uppercase}
+  .stretch-card{background:#fff;border-radius:10px;margin-bottom:8px;overflow:hidden}
+  .stretch-card-inner{padding:12px 14px 10px}
+  .stretch-name{font-size:14px;font-weight:bold;color:#1A1A2E}
+  .stretch-dur{font-size:11px;font-weight:bold;margin-top:2px}
+  .stretch-doel{font-size:12px;color:#555;margin-top:6px;line-height:1.5}
+  .stretch-yt{display:block;color:#fff;text-decoration:none;padding:8px 14px;font-size:11px;font-weight:bold;letter-spacing:.5px;font-family:Georgia,serif}
+
+  /* Toast */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A2E;color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:bold;box-shadow:0 4px 16px #00000033;font-family:Georgia,serif;z-index:999;display:none;white-space:nowrap}
+
+  /* Weekly progress view */
+  .week-progress-card{background:#fff;border-radius:12px;margin-bottom:12px;padding:14px;border:1px solid #EBEBEB;box-shadow:0 1px 5px #0000000d}
+  .wp-name{font-size:14px;font-weight:bold;color:#1A1A2E;margin-bottom:4px}
+  .wp-change{font-size:12px;margin-bottom:10px}
+  .wp-pos{color:#2ECC71;font-weight:bold}
+  .wp-neg{color:#E74C3C;font-weight:bold}
+  .wp-neu{color:#888}
+  .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+  .bar-label{font-size:10px;color:#888;width:60px;flex-shrink:0;text-align:right}
+  .bar-track{flex:1;background:#f0f0f0;border-radius:4px;height:16px;overflow:hidden}
+  .bar-fill{height:16px;border-radius:4px;background:#E86B2E;transition:width .4s}
+  .bar-val{font-size:11px;color:#555;width:44px;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="header-row">
+    <div>
+      <div class="header-title">WORKOUT TRACKER</div>
+      <div class="header-sub">Basketbal Atletiek Programma</div>
+    </div>
+    <div class="header-right">
+      <div class="view-toggle">
+        <button class="vtbtn active" onclick="setView('log')">Log</button>
+        <button class="vtbtn" onclick="setView('history')">Hist.</button>
+        <button class="vtbtn" onclick="setView('progress')">Week</button>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">↓ CSV</button>
+    </div>
+  </div>
+</div>
+
+<div id="day-tabs"></div>
+<div id="content"></div>
+<div id="toast"></div>
+
+<script>
+const DAY_COLORS = ["#E86B2E","#2E86E8","#2EC47A","#9B59B6","#E8C02E"];
+
+const PROGRAM = [
+  { label:"Dag 1", short:"Lower Power", color:"#E86B2E", exercises:[
+    {name:"Box Squat",sets:"4x4",muscles:"Quads · Glutes · Hamstrings",cues:["Zit achteruit op de box, niet neerploffen","Explosief omhoog — duw de grond weg","Knieën in lijn met tenen, rug neutraal","Lage rug: chest up, geen ronde rug"],yt:"https://www.youtube.com/results?search_query=box+squat+tutorial+form"},
+    {name:"Romanian Deadlift",sets:"3x8",muscles:"Hamstrings · Glutes · Lage rug",cues:["Stang dicht langs het lichaam","Heupen naar achteren, knieën licht gebogen","Voel de stretch in hamstrings — stop daar","Glutes samenknijpen bij omhoog komen"],yt:"https://www.youtube.com/results?search_query=romanian+deadlift+tutorial"},
+    {name:"Reverse Lunge",sets:"3x10/been",muscles:"Quads · Glutes · Balans",cues:["Stap achteruit — minder kniedruk","Voorste knie boven teen","Romp rechtop, core gespannen","Duw via hiel voorste been omhoog"],yt:"https://www.youtube.com/results?search_query=reverse+lunge+tutorial"},
+    {name:"Leg Press",sets:"3x10",muscles:"Quads · Glutes",cues:["Voeten schouderbreedte, midden platform","Knieën volgen teen-lijn","Lage rug blijft tegen rugleuning","Niet volledig doorstrekken"],yt:"https://www.youtube.com/results?search_query=leg+press+tutorial"},
+    {name:"Step-up Jump",sets:"3x5/been",muscles:"Quads · Glutes · Explosiviteit",cues:["Zacht landen — rol af van teen naar hiel","Knie landt gebogen, niet stijf","Één been per keer — volledig uitstrekken","Zonder gewicht bij 117 kg"],yt:"https://www.youtube.com/results?search_query=step+up+jump+plyometric"},
+    {name:"Calf Raises",sets:"4x15",muscles:"Gastrocnemius · Soleus",cues:["Volle bewegingsuitslag","Houd 1 sec vast bovenaan","Langzame negatieve fase (3 sec)","Eenbenig voor betere basketbal afzet"],yt:"https://www.youtube.com/results?search_query=standing+calf+raise+tutorial"},
+    {name:"Dead Bug",sets:"3x10",muscles:"Core · Lage rug stabiliteit",cues:["Lage rug plat op de grond — altijd","Langzaam arm en been tegelijk uitstrekken","Uitademen terwijl je uitspreidt","Stop als rug van de grond komt"],yt:"https://www.youtube.com/results?search_query=dead+bug+core+exercise"},
+  ]},
+  { label:"Dag 2", short:"Upper Push", color:"#2E86E8", exercises:[
+    {name:"Incline Dumbbell Press",sets:"4x6",muscles:"Bovenste borst · Schouders · Triceps",cues:["Bank 30-45 graden — niet te steil","Dumbbells naar elkaar bij omhoog drukken","Schouderbladen in de bank knijpen","Gecontroleerd naar beneden — 2 sec"],yt:"https://www.youtube.com/results?search_query=incline+dumbbell+press+tutorial+Jeff+Nippard"},
+    {name:"Flat DB Press",sets:"3x10",muscles:"Borst · Triceps · Voorste deltoid",cues:["Ellebogen 45-75 graden van lichaam","Volledige stretch onderaan","Borst omhoog, schouders naar beneden","Neutraal geroteerde pols"],yt:"https://www.youtube.com/results?search_query=flat+dumbbell+press+tutorial"},
+    {name:"Seated DB Shoulder Press",sets:"3x8",muscles:"Deltoids · Triceps",cues:["Zittend = minder rugbelasting","Dumbbells op oorhoogte starten","Niet volledig doorstrekken bovenaan","Rug tegen de leuning"],yt:"https://www.youtube.com/results?search_query=seated+dumbbell+shoulder+press+tutorial"},
+    {name:"Cable Chest Fly",sets:"3x12",muscles:"Borst · Voorste deltoid",cues:["Kabels hoog — kruis voor borst","Lichte buiging ellebogen, houd vast","Focus op stretch, niet gewicht","Borst samenknijpen aan einde"],yt:"https://www.youtube.com/results?search_query=cable+chest+fly+tutorial"},
+    {name:"Lateral Raises",sets:"4x15",muscles:"Middelste deltoid",cues:["Lichte dumbbells — isolatie","Pinky iets hoger dan duim","Stop op schouderhoogte","Langzaam naar beneden — telt ook"],yt:"https://www.youtube.com/results?search_query=lateral+raises+tutorial"},
+    {name:"Tricep Pushdown",sets:"3x12",muscles:"Triceps",cues:["Ellebogen strak langs lichaam","Volledig uitstrekken onderaan","Touw: pinkjes naar buiten onderaan","Licht naar voren leunen"],yt:"https://www.youtube.com/results?search_query=tricep+pushdown+tutorial"},
+    {name:"Face Pulls",sets:"3x15",muscles:"Achterste deltoid · Rotatorenmanchet",cues:["Kabel op ooghoogte","Trek naar gezicht — ellebogen hoog","Externe rotatie — duimen naar achteren","Langzaam, geen momentum"],yt:"https://www.youtube.com/results?search_query=face+pulls+tutorial"},
+  ]},
+  { label:"Dag 3", short:"Upper Pull", color:"#2EC47A", exercises:[
+    {name:"Pull-up / Lat Pulldown",sets:"4x6-8",muscles:"Lats · Biceps · Midden rug",cues:["Brede greep, breder dan schouders","Trek ellebogen naar heupen toe","Borst naar de bar","Volle hang onderaan voor stretch"],yt:"https://www.youtube.com/results?search_query=pull+up+tutorial+form"},
+    {name:"Seated Cable Row",sets:"3x10",muscles:"Midden rug · Lats · Biceps",cues:["Rechtop zitten — niet achteroverleunen","Trek naar navel, ellebogen langs lichaam","Schouderbladen samenknijpen","Volledig uitstrekken vooraan"],yt:"https://www.youtube.com/results?search_query=seated+cable+row+tutorial"},
+    {name:"Single-arm DB Row",sets:"3x10/kant",muscles:"Lats · Midden rug · Biceps",cues:["Knie op bank — lage rug ontlast","Trek elleboog omhoog, niet achteruit","Romp parallel aan grond","Dumbbell langs lichaam"],yt:"https://www.youtube.com/results?search_query=single+arm+dumbbell+row+tutorial"},
+    {name:"Rear Delt Fly",sets:"3x15",muscles:"Achterste deltoid · Midden rug",cues:["Voorover gebogen of schuine bank","Ellebogen licht gebogen","Beweging vanuit schouder","Lichte gewichten — isolatie"],yt:"https://www.youtube.com/results?search_query=rear+delt+fly+tutorial"},
+    {name:"Hammer Curls",sets:"3x12",muscles:"Biceps · Brachialis · Onderarm",cues:["Neutrale grip heel de weg","Ellebogen strak langs lichaam","Niet slingeren","Goed voor brachialis en onderarm"],yt:"https://www.youtube.com/results?search_query=hammer+curl+tutorial"},
+    {name:"Cable Bicep Curl",sets:"3x12",muscles:"Biceps",cues:["Constante spanning via kabel","Ellebogen iets naar voren","Langzaam naar beneden — 2-3 sec","Pols neutraal"],yt:"https://www.youtube.com/results?search_query=cable+bicep+curl+tutorial"},
+    {name:"Shrugs",sets:"3x12",muscles:"Trapezius",cues:["Recht omhoog — geen rollen","1 sec vasthouden bovenaan","Zware gewichten OK","Of met kabels voor constante spanning"],yt:"https://www.youtube.com/results?search_query=barbell+shrug+tutorial"},
+  ]},
+  { label:"Dag 4", short:"Lower Hyper", color:"#9B59B6", exercises:[
+    {name:"Hack Squat / Leg Press",sets:"4x10",muscles:"Quads · Glutes",cues:["Voeten laag voor meer quads","Rug tegen het platform","Diep gaan — knieën naar borst","Gecontroleerde negatieve fase"],yt:"https://www.youtube.com/results?search_query=hack+squat+tutorial"},
+    {name:"Bulgarian Split Squat",sets:"3x10/been",muscles:"Quads · Glutes · Balans",cues:["Achterste voet op bank","Voorste been doet het werk","Licht voorover voor meer glutes","Lichaamsgewicht is genoeg bij 117 kg"],yt:"https://www.youtube.com/results?search_query=bulgarian+split+squat+tutorial"},
+    {name:"Leg Curl",sets:"3x12",muscles:"Hamstrings",cues:["Heupen in bank drukken","Volledig uitstrekken onderaan","Langzame negatieve fase — 3 sec","Teen naar plafond"],yt:"https://www.youtube.com/results?search_query=lying+leg+curl+tutorial"},
+    {name:"Leg Extension",sets:"3x15",muscles:"Quadriceps",cues:["1 sec vasthouden bovenaan","Langzaam naar beneden","Voeten licht naar buiten voor VMO","Goed warmlopen voor knie"],yt:"https://www.youtube.com/results?search_query=leg+extension+tutorial"},
+    {name:"Hip Thrust",sets:"4x12",muscles:"Glutes · Hamstrings · Lage rug stabiliteit",cues:["Schouderbladen op bank — niet nek","Stang op heupbotten met pad!","Posterior tilt bovenaan","Voeten schouderbreedte, knieën 90gr"],yt:"https://www.youtube.com/results?search_query=hip+thrust+tutorial+Bret+Contreras"},
+    {name:"Walking Lunge",sets:"3x12/been",muscles:"Quads · Glutes · Functioneel",cues:["Grote stap voorwaarts","Voorste knie boven teen","Romp rechtop, core gespannen","Zonder gewicht — lichaam is genoeg"],yt:"https://www.youtube.com/results?search_query=walking+lunge+tutorial"},
+    {name:"Plank",sets:"3x40 sec",muscles:"Core · Lage rug",cues:["Schouders boven polsen","Rechte lijn van hoofd tot hak","Buik intrekken en aanspannen","Adem door — niet vasthouden"],yt:"https://www.youtube.com/results?search_query=plank+form+tutorial"},
+  ]},
+  { label:"Dag 5", short:"Basketbal", color:"#E8C02E", exercises:[
+    {name:"Box Jumps",sets:"4x5",muscles:"Quads · Glutes · Explosiviteit",cues:["Lage box (40-50 cm) bij 117 kg","Arm-swing voor kracht","ZACHTE landing — knieën buigen direct","Stap af de box"],yt:"https://www.youtube.com/results?search_query=box+jump+tutorial+landing"},
+    {name:"Broad Jumps",sets:"3x4",muscles:"Volledig onderbeen · Explosiviteit",cues:["Armen achter voor de sprong","Maximale horizontale afstand","Zachte landing — zak door knieën","Reset volledig voor volgende sprong"],yt:"https://www.youtube.com/results?search_query=broad+jump+tutorial"},
+    {name:"Medicine Ball Slam",sets:"3x10",muscles:"Core · Schouders · Explosiviteit",cues:["Op teentoppen bij opheffen","Heel lichaam in de slam","Maximale kracht naar beneden","Vang niet — raap op"],yt:"https://www.youtube.com/results?search_query=medicine+ball+slam+tutorial"},
+    {name:"Lateral Shuffle 20m",sets:"4x20m",muscles:"Heupen · Quads · Basketbal footwork",cues:["Laag zwaartepunt — knieën gebogen","Voeten kruisen nooit","Hoofd omhoog — basketbal houding","Explosieve richtingverandering"],yt:"https://www.youtube.com/results?search_query=defensive+lateral+shuffle+basketball"},
+    {name:"Sprint 20m",sets:"4x20m",muscles:"Volledig lichaam · Snelheid",cues:["Eerste 3 stappen zijn key","Voorover leunen bij start","Armen pompen krachtig","Volledig herstel tussen sprints"],yt:"https://www.youtube.com/results?search_query=sprint+acceleration+technique"},
+  ]},
+];
+
+const STRETCH = {
+  dynamisch:[
+    {name:"Leg Swings voor/achter",dur:"2x15/been",doel:"Heupflexoren en hamstrings activeren",yt:"https://www.youtube.com/results?search_query=leg+swings+dynamic+warmup"},
+    {name:"Lateral Leg Swings",dur:"2x15/been",doel:"Heupabductoren losmaken",yt:"https://www.youtube.com/results?search_query=lateral+leg+swings+warmup"},
+    {name:"Hip Circles",dur:"2x10/kant",doel:"Heupkapselmobiliteit — direct effect op sprongkracht",yt:"https://www.youtube.com/results?search_query=hip+circles+mobility"},
+    {name:"Ankle Circles + Dorsiflexie",dur:"2x10/voet",doel:"Enkel ROM = meer kniebending bij landing",yt:"https://www.youtube.com/results?search_query=ankle+mobility+dorsiflexion"},
+    {name:"Inchworm + Push-up",dur:"2x6",doel:"Rugketen activeren, schouders voorbereiden",yt:"https://www.youtube.com/results?search_query=inchworm+exercise+tutorial"},
+    {name:"Squat to Stand",dur:"2x8",doel:"Diepe squat mobiliteit, hamstrings dynamisch",yt:"https://www.youtube.com/results?search_query=squat+to+stand+mobility"},
+  ],
+  statisch:[
+    {name:"90/90 Hip Stretch",dur:"60 sec/kant",doel:"Heupkapselmobiliteit — cruciaal voor sprongkracht",yt:"https://www.youtube.com/results?search_query=90+90+hip+stretch"},
+    {name:"Kneeling Heupflexor Stretch",dur:"45 sec/kant",doel:"Lage rug en zithouding — dagelijks doen",yt:"https://www.youtube.com/results?search_query=kneeling+hip+flexor+stretch"},
+    {name:"Couch Stretch (quadricep)",dur:"45 sec/kant",doel:"Quad lengte = meer kniebending bij afzet",yt:"https://www.youtube.com/results?search_query=couch+stretch+tutorial"},
+    {name:"Seated Hamstring Stretch",dur:"45 sec/kant",doel:"Hamstring lengte beschermt lage rug",yt:"https://www.youtube.com/results?search_query=seated+hamstring+stretch"},
+    {name:"Piriformis Stretch (figuur-4)",dur:"45 sec/kant",doel:"Sciatica preventie, heupopener",yt:"https://www.youtube.com/results?search_query=figure+4+piriformis+stretch"},
+    {name:"Doorway Chest Stretch",dur:"30 sec",doel:"Tegenwicht voor druktrainingen",yt:"https://www.youtube.com/results?search_query=doorway+chest+stretch"},
+    {name:"Child's Pose + laterale reach",dur:"60 sec",doel:"Lage rug decompressie — altijd als laatste",yt:"https://www.youtube.com/results?search_query=childs+pose+lateral+reach"},
+    {name:"Cat-Cow",dur:"10 herhalingen",doel:"Rugmobiliteit en zenuwstelsel kalmeren",yt:"https://www.youtube.com/results?search_query=cat+cow+spine+tutorial"},
+  ],
+};
+
+// ── State ──────────────────────────────────────────────────────────────────
+let activeDay = 0;
+let currentView = 'log'; // log | history | progress
+let expanded = {};
+const SK = 'wt_data_v3';
+
+function getData(){ try{ return JSON.parse(localStorage.getItem(SK))||{}; }catch{ return {}; } }
+function saveData(d){ try{ localStorage.setItem(SK, JSON.stringify(d)); }catch{} }
+
+function today(){ return new Date().toISOString().slice(0,10); }
+function weekKey(dateStr){ 
+  const d = new Date(dateStr);
+  const jan1 = new Date(d.getFullYear(),0,1);
+  const week = Math.ceil(((d-jan1)/86400000 + jan1.getDay()+1)/7);
+  return d.getFullYear()+'-W'+String(week).padStart(2,'0');
+}
+function fmtDate(d){ return new Date(d).toLocaleDateString('nl-NL',{day:'numeric',month:'short'}); }
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+function renderTabs(){
+  const el = document.getElementById('day-tabs');
+  let h = '';
+  PROGRAM.forEach((d,i)=>{
+    const ac = activeDay===i && currentView!=='stretch' && currentView!=='weekprog';
+    h+=`<button class="day-tab${ac?' active':''}" style="${ac?'background:'+d.color:''}" onclick="switchDay(${i})">
+      <span class="day-num">${d.label.split(' ')[0]} ${i+1}</span>
+      <span class="day-label">${d.short.split(' ').slice(0,2).join(' ')}</span>
+    </button>`;
+  });
+  h+=`<button class="day-tab${currentView==='stretch'?' active':''}" style="${currentView==='stretch'?'background:#27AE60':''}" onclick="switchView('stretch')">
+    <span class="day-num">🧘</span><span class="day-label">Stretch</span>
+  </button>`;
+  el.innerHTML = h;
+}
+
+function switchDay(i){
+  activeDay = i;
+  if(currentView==='stretch'||currentView==='weekprog') currentView='log';
+  renderTabs();
+  renderContent();
+  updateAccent(PROGRAM[i].color);
+}
+
+function switchView(v){
+  currentView = v;
+  renderTabs();
+  renderContent();
+  if(v==='stretch') updateAccent('#27AE60');
+}
+
+function setView(v){
+  if(v==='progress'){ currentView='weekprog'; renderTabs(); renderContent(); updateAccent(PROGRAM[activeDay].color); return; }
+  currentView = v;
+  renderTabs();
+  renderContent();
+}
+
+function updateAccent(color){
+  document.getElementById('header').style.borderBottomColor = color;
+  document.querySelectorAll('.vtbtn.active').forEach(b=>b.style.background=color);
+}
+
+// ── Content render ─────────────────────────────────────────────────────────
+function renderContent(){
+  const el = document.getElementById('content');
+  if(currentView==='stretch'){ el.innerHTML = renderStretch(); return; }
+  if(currentView==='weekprog'){ el.innerHTML = renderWeekProgress(); return; }
+  const day = PROGRAM[activeDay];
+  const data = getData();
+  let h = '';
+  day.exercises.forEach((ex,idx)=>{
+    const hist = data[ex.name]||[];
+    const last = hist.length ? hist[hist.length-1].weight : null;
+    const pr = hist.length ? Math.max(...hist.map(e=>e.weight)) : null;
+    const trend = hist.length>=2 ? (hist[hist.length-1].weight - hist[hist.length-2].weight) : null;
+    const isExp = !!expanded[ex.name];
+
+    h += `<div class="card">
+      <div class="card-top">
+        <div style="flex:1">
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-sets" style="color:${day.color}">${ex.sets} &nbsp;·&nbsp; <span class="ex-muscles">${ex.muscles}</span></div>
+        </div>
+        <div class="card-meta">
+          ${pr!==null?`<div class="pr-badge" style="background:${day.color}">PR ${pr}kg</div>`:''}
+          ${trend!==null&&trend>0?'<span class="trend-up">▲</span>':''}
+          ${trend!==null&&trend<0?'<span class="trend-down">▼</span>':''}
+        </div>
+      </div>`;
+
+    if(currentView==='log'){
+      h+=`${last!==null?`<div class="last-entry">Vorig: <strong>${last} kg</strong></div>`:''}
+      <div class="input-row">
+        <input class="weight-input" type="number" inputmode="decimal" placeholder="${last!==null?last+' kg':'Gewicht (kg)'}" id="inp_${idx}" onkeydown="if(event.key==='Enter')logWeight('${ex.name}',${idx})">
+        <button class="log-btn" style="background:${day.color}" onclick="logWeight('${ex.name}',${idx})">Sla op</button>
+      </div>`;
+    }
+
+    if(currentView==='history'){
+      const recent = hist.slice(-6).reverse();
+      if(!recent.length){ h+=`<div class="no-data">Nog geen gewichten gelogd</div>`; }
+      else {
+        h+=`<div class="hist-row">`;
+        recent.forEach((e,i)=>{ h+=`<div class="hist-item${i===0?' latest':''}" style="${i===0?'border-left-color:'+day.color:''}"><div class="hist-date">${fmtDate(e.date)}</div><div class="hist-weight">${e.weight}<span class="hist-unit"> kg</span></div></div>`; });
+        h+=`</div>`;
+      }
+    }
+
+    // Mini weekly progress bar chart
+    if(currentView==='log'||currentView==='history'){
+      const weekMap = {};
+      hist.forEach(e=>{ const w=weekKey(e.date); if(!weekMap[w]||e.weight>weekMap[w]) weekMap[w]=e.weight; });
+      const weeks = Object.keys(weekMap).sort().slice(-5);
+      if(weeks.length>=2){
+        const maxW = Math.max(...weeks.map(w=>weekMap[w]));
+        h+=`<div class="progress-section"><div class="progress-title">Progressie per week</div>`;
+        weeks.forEach(w=>{ const pct=Math.round((weekMap[w]/maxW)*100); h+=`<div class="bar-row"><div class="bar-label">${w.split('-W')[1]?'Wk '+w.split('-W')[1]:w}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${day.color}"></div></div><div class="bar-val">${weekMap[w]} kg</div></div>`; });
+        h+=`</div>`;
+      }
+    }
+
+    h+=`<button class="expand-btn" style="color:${day.color}" onclick="toggleExpand('${ex.name}')">
+      ${isExp?'▲ Verberg uitleg':'▼ Techniek & video'}
+    </button>
+    <div class="expanded-content${isExp?' open':''}">
+      <div class="cues-title">Techniek cues:</div>
+      <ul class="cues-list">
+        ${ex.cues.map(c=>`<li class="cue-item"><span class="cue-dot" style="background:${day.color}"></span>${c}</li>`).join('')}
+      </ul>
+      <a class="yt-link" style="background:${day.color}" href="${ex.yt}" target="_blank">▶ Bekijk tutorial op YouTube</a>
+    </div></div>`;
+  });
+  el.innerHTML = h;
+}
+
+// ── Weekly progress overview ───────────────────────────────────────────────
+function renderWeekProgress(){
+  const data = getData();
+  let h = `<div style="margin-bottom:12px;background:#fff;border-radius:12px;padding:12px 14px;border:1px solid #EBEBEB"><div style="font-size:13px;font-weight:bold;color:#1A1A2E;margin-bottom:2px">Weekoverzicht — alle oefeningen</div><div style="font-size:11px;color:#888">Hoogste gewicht per week, laatste 5 weken</div></div>`;
+  
+  PROGRAM.forEach(day=>{
+    h+=`<div style="font-size:11px;font-weight:bold;color:${day.color};letter-spacing:1px;text-transform:uppercase;margin:14px 0 6px">${day.label} — ${day.short}</div>`;
+    day.exercises.forEach(ex=>{
+      const hist = data[ex.name]||[];
+      if(!hist.length) return;
+      const weekMap = {};
+      hist.forEach(e=>{ const w=weekKey(e.date); if(!weekMap[w]||e.weight>weekMap[w]) weekMap[w]=e.weight; });
+      const weeks = Object.keys(weekMap).sort().slice(-5);
+      if(weeks.length<1) return;
+      const maxW = Math.max(...weeks.map(w=>weekMap[w]));
+      const first = weekMap[weeks[0]];
+      const lastW = weekMap[weeks[weeks.length-1]];
+      const diff = lastW - first;
+      h+=`<div class="week-progress-card">
+        <div class="wp-name">${ex.name} <span style="font-size:11px;font-weight:normal;color:#888">· ${ex.sets}</span></div>
+        <div class="wp-change">
+          ${weeks.length>=2
+            ? `<span class="${diff>0?'wp-pos':diff<0?'wp-neg':'wp-neu'}">${diff>0?'+':''}${diff} kg</span> <span style="color:#888">over ${weeks.length} weken</span>`
+            : `<span class="wp-neu">1 week data</span>`}
+        </div>`;
+      weeks.forEach(w=>{ const pct=Math.round((weekMap[w]/maxW)*100); h+=`<div class="bar-row"><div class="bar-label">Wk ${w.split('-W')[1]||w}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${day.color}"></div></div><div class="bar-val">${weekMap[w]} kg</div></div>`; });
+      h+=`</div>`;
+    });
+  });
+  if(h.length<200) h+=`<div style="text-align:center;color:#bbb;font-size:13px;padding:40px 20px;font-style:italic">Log eerst gewichten om je weekprogressie te zien.</div>`;
+  return h;
+}
+
+// ── Stretch ────────────────────────────────────────────────────────────────
+function renderStretch(){
+  let h=`<div class="stretch-banner"><div class="stretch-banner-title">NA elke training (12-15 min)</div><div class="stretch-banner-sub">Op rustdagen ook 's ochtends (10 min). Dynamisch VOOR, statisch NA training.</div></div>`;
+  h+=`<div class="stretch-section-title" style="color:#27AE60">🔥 Dynamisch — voor training</div>`;
+  STRETCH.dynamisch.forEach(s=>{ h+=`<div class="stretch-card" style="border:1px solid #E0F0E8"><div class="stretch-card-inner"><div class="stretch-name">${s.name}</div><div class="stretch-dur" style="color:#27AE60">${s.dur}</div><div class="stretch-doel">${s.doel}</div></div><a class="stretch-yt" style="background:#27AE60" href="${s.yt}" target="_blank">▶ YouTube tutorial</a></div>`; });
+  h+=`<div class="stretch-section-title" style="color:#2E86E8">🧊 Statisch — na training</div>`;
+  STRETCH.statisch.forEach(s=>{ h+=`<div class="stretch-card" style="border:1px solid #DCE9F8"><div class="stretch-card-inner"><div class="stretch-name">${s.name}</div><div class="stretch-dur" style="color:#2E86E8">${s.dur}</div><div class="stretch-doel">${s.doel}</div></div><a class="stretch-yt" style="background:#2E86E8" href="${s.yt}" target="_blank">▶ YouTube tutorial</a></div>`; });
+  return h;
+}
+
+// ── Log weight ─────────────────────────────────────────────────────────────
+function logWeight(name, idx){
+  const inp = document.getElementById('inp_'+idx);
+  if(!inp) return;
+  const val = parseFloat(inp.value);
+  if(!val||isNaN(val)) return;
+  const d = getData();
+  if(!d[name]) d[name]=[];
+  d[name].push({date:today(), weight:val});
+  saveData(d);
+  inp.value='';
+  showToast('✓ '+val+' kg opgeslagen');
+  renderContent();
+}
+
+function toggleExpand(name){
+  expanded[name] = !expanded[name];
+  renderContent();
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+function exportCSV(){
+  const d = getData();
+  const rows = ['Oefening,Datum,Gewicht (kg)'];
+  Object.entries(d).forEach(([ex,entries])=>{ entries.forEach(e=>rows.push(`"${ex}",${e.date},${e.weight}`)); });
+  const blob = new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='workout_'+today()+'.csv'; a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Export gedownload');
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent=msg; t.style.display='block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ t.style.display='none'; },2200);
+}
+
+// ── View buttons highlight ─────────────────────────────────────────────────
+const origSetView = setView;
+window.setView = function(v){
+  document.querySelectorAll('.vtbtn').forEach(b=>{ b.classList.remove('active'); b.style.background=''; });
+  const labels = {log:'Log',history:'Hist.',progress:'Week'};
+  document.querySelectorAll('.vtbtn').forEach(b=>{ if(b.textContent===labels[v]) b.classList.add('active'); });
+  origSetView(v);
+};
+
+// ── Init ───────────────────────────────────────────────────────────────────
+renderTabs();
+renderContent();
+document.querySelector('.vtbtn').classList.add('active');
+</script>
+</body>
+</html>
